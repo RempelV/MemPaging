@@ -10,6 +10,7 @@ typedef struct {
 
 typedef struct {
     int id;
+    int numberOfPages;
     unsigned char* logicalMemory;
     RowPageTable* pageTable;
 } Process;
@@ -84,11 +85,12 @@ unsigned char* create_logical_memory(int logicalMemorySize) {
     return logicalMemory;
 }
 
-Process* create_process(int id, unsigned char *logicalMemory, int logicalMemorySize) {
+Process* create_process(int id, unsigned char *logicalMemory, int numberOfPages) {
     Process* newProcess = (Process*)malloc(sizeof(Process));
     newProcess->id = id;
+    newProcess->numberOfPages = numberOfPages;
     newProcess->logicalMemory = logicalMemory;
-    newProcess->pageTable = (RowPageTable*)malloc(logicalMemorySize * sizeof(RowPageTable));
+    newProcess->pageTable = (RowPageTable*)malloc(numberOfPages * sizeof(RowPageTable));
     return newProcess;
 }
 
@@ -138,10 +140,43 @@ int main() {
                 break;
             case 2:
                 printf("Opção selecionada: Visualizar Tabela de Páginas\n");
-                // Percorre array de processos
-                // Listar id dos processos
-                // input processo
-                // Mostrar a tabela do processo
+                // Verificar se faz sentido permitir a criação de processos com o mesmo ID
+                Process *process = processes[0];
+                if (process == NULL) {
+                    printf("Nenhum processo registrado\n");
+                    break;   
+                }
+
+                printf("Selecione um PID:\n");
+                for (int i = 1; process != NULL; i++) {
+                    printf("PID: %d\n", process->id);
+                    process = processes[i];
+                }
+                
+                int pid;
+                printf("Entrada: ");
+                scanf(" %d", &pid);
+
+                process = processes[0];
+                int found = 0;
+
+                for (int i = 1; process != NULL || found; i++) {
+                    if (process->id == pid) {
+                        found = 1;
+                        printf("Tabela de Páginas do Processo %d:\n", pid);
+                        printf("Página\tQuadro\n");
+                        for (int j = 0; j < process->numberOfPages; j++) {
+                            printf("%d\t%d\n", process->pageTable[j].pageAddress, process->pageTable[j].frameAddress);
+                        }
+                        break;
+                    }
+                    process = processes[i];
+                }
+
+                if (!found) {
+                    printf("Processo não encontrado.");
+                }
+
                 break;
             case 3:
                 printf("Opção selecionada: Criar um Processo\n");
@@ -170,9 +205,6 @@ int main() {
                     }
                 }
                 if (countHeadFreeFrames >= numberOfPages) {
-                    for (int i = 0; i < numberOfPages; i++) {
-                        printf("memoria logica %d %d\n", i, logicalMemory[i]);
-                    }
                     for (int i = 0; i < numberOfFrames; i++) {
                         if (processes[i] == NULL) {
                             processes[i] = create_process(id, logicalMemory, numberOfPages);
