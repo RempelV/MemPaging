@@ -35,18 +35,18 @@ void print_physical_memory(MemoryFrame *physicalMemory, int numberOfFrames) {
     int used = 0;
     for (int i = 0; i < numberOfFrames; i++) {
         if (physicalMemory[i].set == 0) {
-            free ++;
+            free++;
             printf("%02d [   ]\n", i);
         }
         else {
-            used ++;
+            used++;
             printf("%02d [ %d ]\n", i, physicalMemory[i].value);
         }
     }
-    printf("Free: %d - Used: %d\n\nMemória disponível: %.2f %%", free, used, ((float)free/numberOfFrames)*100);
+    printf("Free: %d - Used: %d\n\nMemória disponível: %.2f %%", free, used, ((float)free / numberOfFrames) * 100);
 }
 
-MemoryFrame* initialize_physical_memory(int numberOfFrames){
+MemoryFrame* initialize_physical_memory(int numberOfFrames) {
     MemoryFrame *physicalMemory = (MemoryFrame*)malloc(numberOfFrames * sizeof(MemoryFrame));
     for (int i = 0; i < numberOfFrames; i++) {
         physicalMemory[i].value = 0;
@@ -67,13 +67,11 @@ void get_params(int *physicalSizeAddr, int *pageSizeAddr, int *processMaxSizeAdd
 }
 
 int generate_random_byte() {
-    int randInt = rand() % (255) + 0;
-    return randInt;
+    return rand() % 256;
 }
 
 void load_free_frames(Node **free_frames, int numberOfFrames) {
     for (int i = 0; i < numberOfFrames; i++) {
-        printf("data: %d", i);
         insertAtEnd(free_frames, i);
     }
 }
@@ -83,32 +81,29 @@ unsigned char* create_logical_memory(int logicalMemorySize) {
     for (int i = 0; i < logicalMemorySize; i++) {
         logicalMemory[i] = generate_random_byte();
     }
-
     return logicalMemory;
 }
 
-Process* create_process(int id, unsigned char *logicalMemory){
+Process* create_process(int id, unsigned char *logicalMemory, int logicalMemorySize) {
     Process* newProcess = (Process*)malloc(sizeof(Process));
-    newProcess -> id = id;
-    newProcess -> logicalMemory = logicalMemory;
-    newProcess -> pageTable = (RowPageTable*)malloc(sizeof(logicalMemory) * sizeof(RowPageTable));
+    newProcess->id = id;
+    newProcess->logicalMemory = logicalMemory;
+    newProcess->pageTable = (RowPageTable*)malloc(logicalMemorySize * sizeof(RowPageTable));
     return newProcess;
-    }
+}
 
-void createPageTable(Process* process, int numberOfPages, Node** headFreeFrames, MemoryFrame* physicalMemory){
-    for (int i = 0; i < numberOfPages; i++){
+void createPageTable(Process* process, int numberOfPages, Node** headFreeFrames, MemoryFrame* physicalMemory) {
+    for (int i = 0; i < numberOfPages; i++) {
         Node* randomAvailableFrame = getRandomValue(headFreeFrames);
-        printf("random node %d", randomAvailableFrame->data);
-        process -> pageTable[i].pageAddress = i;
-        process -> pageTable[i].frameAddress = randomAvailableFrame->data;
+        process->pageTable[i].pageAddress = i;
+        process->pageTable[i].frameAddress = randomAvailableFrame->data;
         deleteNode(headFreeFrames, randomAvailableFrame->data);
         physicalMemory[randomAvailableFrame->data].set = 1;
-        physicalMemory[randomAvailableFrame->data].value = process -> logicalMemory[i];
-        printf("%d",physicalMemory[randomAvailableFrame->data].value);
+        physicalMemory[randomAvailableFrame->data].value = process->logicalMemory[i];
     }
 }
 
-int main() { 
+int main() {
     srand(time(NULL));
     unsigned char* logicalMemory;
     int running = 1;
@@ -126,13 +121,13 @@ int main() {
 
     int numberOfFrames = physicalSize / pageSize;
     MemoryFrame *physicalMemory = initialize_physical_memory(numberOfFrames);
-    Process processes[numberOfFrames];
+    Process *processes[numberOfFrames];
     load_free_frames(&headFreeFrames, numberOfFrames);
-    for(int i = 0; i < numberOfFrames; i++) {
-        processes[i] = *create_process(-1, 0);
+    for (int i = 0; i < numberOfFrames; i++) {
+        processes[i] = NULL;
     }
 
-    printf("Memória física possui: %d quadros", numberOfFrames); // debug
+    printf("Memória física possui: %d quadros\n", numberOfFrames); // debug
 
     while (running) {
         main_menu(&menuOpt);
@@ -143,7 +138,6 @@ int main() {
                 break;
             case 2:
                 printf("Opção selecionada: Visualizar Tabela de Páginas\n");
-                
                 // Percorre array de processos
                 // Listar id dos processos
                 // input processo
@@ -159,44 +153,46 @@ int main() {
                     printf("Digite um tamanho: ");
                     scanf("%d", &processSize);
                     if (processSize > processMaxSize || processSize < 1) {
-                        printf("ERRO: O valor informado está fora dos limites de tamanho para um processo, por favor digite um novo valor ente 1 e %d\n", processMaxSize);
-                }
+                        printf("ERRO: O valor informado está fora dos limites de tamanho para um processo, por favor digite um novo valor entre 1 e %d\n", processMaxSize);
+                    }
                 } while (processSize > processMaxSize || processSize < 1);
 
                 int numberOfPages = processSize / pageSize;
-                
                 if (processSize % pageSize != 0) {
                     numberOfPages++;
                 }
 
                 logicalMemory = create_logical_memory(numberOfPages);
                 int countHeadFreeFrames = 0;
-                for (int i = 0; numberOfFrames > i; i++) {
-                    if (physicalMemory[i].set == 0){
+                for (int i = 0; i < numberOfFrames; i++) {
+                    if (physicalMemory[i].set == 0) {
                         countHeadFreeFrames++;
                     }
                 }
-                if(countHeadFreeFrames >= numberOfPages){
+                if (countHeadFreeFrames >= numberOfPages) {
                     for (int i = 0; i < numberOfPages; i++) {
-                        printf("memoria logica %d %d\n",i, logicalMemory[i]);
+                        printf("memoria logica %d %d\n", i, logicalMemory[i]);
                     }
-                    for (int i = 0; i < numberOfPages; i++){
-                        if(processes[i].id == -1){
-                            processes[i] = *create_process(id, logicalMemory);
-                            createPageTable(&processes[i], numberOfPages, &headFreeFrames, physicalMemory);
+                    for (int i = 0; i < numberOfFrames; i++) {
+                        if (processes[i] == NULL) {
+                            processes[i] = create_process(id, logicalMemory, numberOfPages);
+                            createPageTable(processes[i], numberOfPages, &headFreeFrames, physicalMemory);
                             break;
                         }
                     }
                 }
                 else {
-                    printf("\n ERRO: Não há quadros suficientes para o número de páginas necessário!\n");
+                    printf("\nERRO: Não há quadros suficientes para o número de páginas necessário!\n");
+                    free(logicalMemory);
                 }
                 break;
             default:
                 printf("Opção selecionada: Sair. Saindo...\n");
+                running = 0;
         }
     }
 
-    free(logicalMemory);
-    return 0; 
-} 
+    free(physicalMemory);
+    freeList(headFreeFrames);
+    return 0;
+}
