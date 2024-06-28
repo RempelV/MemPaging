@@ -148,13 +148,20 @@ int main() {
 
                 int numberOfPages = processSize / pageSize;
                 logicalMemory = create_logical_memory(numberOfPages);
-
-                for (int i = 0; i < numberOfPages; i++) {
-                    printf(" %d\n", logicalMemory[i]);
+                int countFreeFrames = 0;
+                for (int i = 0; numberOfFrames < i; i++) {
+                    if (physicalMemory[i].set == 0){
+                        countFreeFrames ++;
+                    }
                 }
-                for (int i = 0; i < numberOfPages; i++){
-                    if(processes[i].id == -1){
-                        processes[i] = *create_process(id, logicalMemory);
+                if(countFreeFrames >= numberOfPages){
+                    for (int i = 0; i < numberOfPages; i++) {
+                        printf(" %d\n", logicalMemory[i]);
+                    }
+                    for (int i = 0; i < numberOfPages; i++){
+                        if(processes[i].id == -1){
+                            processes[i] = *create_process(id, logicalMemory);
+                        }
                     }
                 }
                 
