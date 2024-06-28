@@ -79,13 +79,14 @@ void freeList(Node* head) {
     }
 }
 
-Node *getRandomValue(Node* head)
+Node *getRandomValue(Node** head)
 {
     while (1)
     {
-        for(Node* temp = head; temp != NULL; temp = temp->next)
+        for(Node* temp = *head; temp != NULL; temp = temp -> next)
         {
-            if(rand() % 3 == 0)
+            int var = rand();
+            if(var % 3 == 0)
             {
                 return temp;
             }

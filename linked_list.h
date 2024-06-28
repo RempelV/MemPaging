@@ -13,6 +13,6 @@ void insertAtEnd(Node** head, int data);
 void printList(Node* head);
 void deleteNode(Node** head, int key);
 void freeList(Node* head);
-Node* getRandomValue();
+Node* getRandomValue(Node** head);
 
 #endif

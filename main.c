@@ -93,6 +93,19 @@ Process* create_process(int id, unsigned char *logicalMemory){
     return newProcess;
     }
 
+void createPageTable(Process* process, int numberOfPages, Node* headFreeFrames, MemoryFrame* physicalMemory){
+    for (int i = 0; i < numberOfPages; i++){
+        Node* randomAvailableFrame = getRandomValue(&headFreeFrames);
+        printf("random node %d", randomAvailableFrame->data);
+        process -> pageTable[i].pageAddress = i;
+        process -> pageTable[i].frameAddress = randomAvailableFrame->data;
+        deleteNode(&headFreeFrames, randomAvailableFrame->data);
+        physicalMemory[randomAvailableFrame->data].set = 1;
+        physicalMemory[randomAvailableFrame->data].value = process -> logicalMemory[i];
+        printf("%d",physicalMemory[randomAvailableFrame->data].value);
+    }
+}
+
 int main() { 
     srand(time(NULL));
     unsigned char* logicalMemory;
@@ -101,7 +114,7 @@ int main() {
     int pageSize;
     int processMaxSize;
     int menuOpt;
-    Node* freeFrames = NULL;
+    Node* headFreeFrames = NULL;
 
     get_params(&physicalSize, &pageSize, &processMaxSize);
     printf("\nParâmetros configurados:\n\n\
@@ -112,6 +125,7 @@ int main() {
     int numberOfFrames = physicalSize / pageSize;
     MemoryFrame *physicalMemory = initialize_physical_memory(numberOfFrames);
     Process processes[numberOfFrames];
+    load_free_frames(&headFreeFrames, numberOfFrames);
     for(int i = 0; i < numberOfFrames; i++) {
         processes[i] = *create_process(-1, 0);
     }
@@ -142,34 +156,33 @@ int main() {
                     printf("Digite um tamanho: ");
                     scanf("%d", &processSize);
                     if (processSize > processMaxSize || processSize < 1) {
-                        printf("O valor informado está fora dos limites de tamanho para um processo, por favor digite um novo valor ente 1 e %d\n", processMaxSize);
+                        printf("ERRO: O valor informado está fora dos limites de tamanho para um processo, por favor digite um novo valor ente 1 e %d\n", processMaxSize);
                 }
                 } while (processSize > processMaxSize || processSize < 1);
 
                 int numberOfPages = processSize / pageSize;
                 logicalMemory = create_logical_memory(numberOfPages);
-                int countFreeFrames = 0;
-                for (int i = 0; numberOfFrames < i; i++) {
+                int countHeadFreeFrames = 0;
+                for (int i = 0; numberOfFrames > i; i++) {
                     if (physicalMemory[i].set == 0){
-                        countFreeFrames ++;
+                        countHeadFreeFrames++;
                     }
                 }
-                if(countFreeFrames >= numberOfPages){
+                if(countHeadFreeFrames >= numberOfPages){
                     for (int i = 0; i < numberOfPages; i++) {
-                        printf(" %d\n", logicalMemory[i]);
+                        printf("memoria logica %d %d\n",i, logicalMemory[i]);
                     }
                     for (int i = 0; i < numberOfPages; i++){
                         if(processes[i].id == -1){
                             processes[i] = *create_process(id, logicalMemory);
+                            createPageTable(&processes[i], numberOfPages, headFreeFrames, physicalMemory);
+ 
                         }
                     }
                 }
-                
-                // verifica se eh maior que o tamanho maximo
-                // se sim mensagem de erro
-                // senao verifica se há disponibilidade no endereço logico
-                // se houver: adiciona um processo na lista encadeada de processos com os quadros disponiveis na lista encadeada de quadros
-                // senao mensagem de erro
+                else {
+                    printf("\n ERRO: Não há quadros suficientes para o número de páginas necessário!\n");
+                }
                 break;
             default:
                 printf("Opção selecionada: Sair. Saindo...\n");
