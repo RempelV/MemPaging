@@ -207,13 +207,14 @@ int main() {
                 int flagID = 1;
                 int processSize;
                 do{
+                    flagID = 0;
                     printf("Digite um id: ");
                     scanf("%d", &id);
                     for (int i = 0; i < numberOfFrames; i++){
                         if(processes[i] != NULL && processes[i]->id == id){
                             printf("ERRO: Este id já existe, digite outro id único!\n");
-                            break;
-                        } else flagID = 0;
+                            flagID = 1;
+                        } 
                     }
                 } while (flagID == 1);
                 do {
