@@ -16,7 +16,7 @@ typedef struct {
 } Process;
 
 typedef struct {
-    unsigned char value;
+    unsigned char* values;
     int set; // 0 = não setado, 1 = setado
 } MemoryFrame;
 
@@ -31,26 +31,33 @@ Entrada: ");
     scanf(" %d", menuOptAddr);
 }
 
-void print_physical_memory(MemoryFrame *physicalMemory, int numberOfFrames) {
+void print_physical_memory(MemoryFrame *physicalMemory, int numberOfFrames, int pageSize) {
     int free = 0;
     int used = 0;
     for (int i = 0; i < numberOfFrames; i++) {
-        if (physicalMemory[i].set == 0) {
-            free++;
-            printf("%02d [   ]\n", i);
+        for(int j = 0; j < pageSize; j ++){
+            if (physicalMemory[i].set == 0) {
+                free++;
+                printf("%02d [   ]", i);
+            }
+            else {
+                used++;
+                printf("%02d [ %d ] ", i, physicalMemory[i].values[j]);
+            }
         }
-        else {
-            used++;
-            printf("%02d [ %d ]\n", i, physicalMemory[i].value);
-        }
+        printf("\n");
     }
     printf("Free: %d - Used: %d\n\nMemória disponível: %.2f %%", free, used, ((float)free / numberOfFrames) * 100);
 }
 
-MemoryFrame* initialize_physical_memory(int numberOfFrames) {
-    MemoryFrame *physicalMemory = (MemoryFrame*)malloc(numberOfFrames * sizeof(MemoryFrame));
+MemoryFrame* initialize_physical_memory(int numberOfFrames, int pageSize) {
+    unsigned char *values = (unsigned char*)malloc(pageSize * sizeof(unsigned char));
+    MemoryFrame *physicalMemory = (MemoryFrame*)malloc(numberOfFrames * pageSize * sizeof(MemoryFrame));
+    physicalMemory -> values = values;
     for (int i = 0; i < numberOfFrames; i++) {
-        physicalMemory[i].value = 0;
+        for (int j = 0; j < pageSize; j++){
+                    physicalMemory[i].values[j] = 0;
+        }
         physicalMemory[i].set = 0;
     }
     return physicalMemory;
@@ -101,7 +108,7 @@ void createPageTable(Process* process, int numberOfPages, Node** headFreeFrames,
         process->pageTable[i].frameAddress = randomAvailableFrame->data;
         deleteNode(headFreeFrames, randomAvailableFrame->data);
         physicalMemory[randomAvailableFrame->data].set = 1;
-        physicalMemory[randomAvailableFrame->data].value = process->logicalMemory[i];
+        physicalMemory[randomAvailableFrame->data].values = process->logicalMemory[i];
     }
 }
 
@@ -122,7 +129,8 @@ int main() {
     - Tamanho Máximo Processo: %d bytes\n\n", physicalSize, pageSize, processMaxSize);
 
     int numberOfFrames = physicalSize / pageSize;
-    MemoryFrame *physicalMemory = initialize_physical_memory(numberOfFrames);
+    MemoryFrame *physicalMemory = initialize_physical_memory(numberOfFrames, pageSize);
+    printf("AAAAAAAAAAA")
     Process *processes[numberOfFrames];
     load_free_frames(&headFreeFrames, numberOfFrames);
     for (int i = 0; i < numberOfFrames; i++) {
@@ -136,7 +144,7 @@ int main() {
         switch (menuOpt) {
             case 1:
                 printf("Opção selecionada: Visualizar Memória\n");
-                print_physical_memory(physicalMemory, numberOfFrames);
+                print_physical_memory(physicalMemory, numberOfFrames, pageSize);
                 break;
             case 2:
                 printf("Opção selecionada: Visualizar Tabela de Páginas\n");
