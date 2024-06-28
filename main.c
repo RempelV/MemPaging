@@ -26,7 +26,7 @@ Selecione uma opção: \n\
     1 - Visualizar Memória\n\
     2 - Visualizar Tabela de Página\n\
     3 - Criar um Processo\n\
-    Outro - Sair\n\n\
+    Outro inteiro - Sair\n\n\
 Entrada: ");
     scanf(" %d", menuOptAddr);
 }
@@ -84,14 +84,14 @@ void load_free_frames(Node **free_frames, int numberOfFrames) {
     }
 }
 
-unsigned char* create_logical_memory(int logicalMemorySize, int pageSize) {
+unsigned char* create_logical_memory(int logicalMemorySize, int numberOfAddresses) {
     unsigned char* logicalMemory = (unsigned char*)malloc(logicalMemorySize * sizeof(unsigned char));
     for (int i = 0; i < logicalMemorySize; i++) {
         logicalMemory[i] = generate_random_byte();
     }
 
-    unsigned char* paddedLogicalMemory = (unsigned char*)malloc(pageSize * sizeof(unsigned char));
-    for (int i = 0; i < pageSize; i++) {
+    unsigned char* paddedLogicalMemory = (unsigned char*)malloc(numberOfAddresses * sizeof(unsigned char));
+    for (int i = 0; i < numberOfAddresses; i++) {
         if (i < logicalMemorySize) {
             paddedLogicalMemory[i] = logicalMemory[i];
         } else {
@@ -229,7 +229,7 @@ int main() {
                     numberOfPages++;
                 }
 
-                logicalMemory = create_logical_memory(processSize, pageSize);
+                logicalMemory = create_logical_memory(processSize, pageSize*numberOfPages);
                 int countHeadFreeFrames = 0;
                 for (int i = 0; i < numberOfFrames; i++) {
                     if (physicalMemory[i].set == 0) {
