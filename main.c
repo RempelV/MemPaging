@@ -67,18 +67,20 @@ void get_params(int *physicalSizeAddr, int *pageSizeAddr, int *processMaxSizeAdd
 }
 
 int generate_random_byte() {
-    return rand() % (255 - 0 + 1) + 0;
+    int randInt = rand() % (255) + 0;
+    return randInt;
 }
 
 void load_free_frames(Node **free_frames, int numberOfFrames) {
     for (int i = 0; i < numberOfFrames; i++) {
+        printf("data: %d", i);
         insertAtEnd(free_frames, i);
     }
 }
 
 unsigned char* create_logical_memory(int logicalMemorySize) {
     unsigned char* logicalMemory = (unsigned char*)malloc(logicalMemorySize * sizeof(unsigned char));
-    for (int i = 0; i < sizeof(logicalMemory); i++) {
+    for (int i = 0; i < logicalMemorySize; i++) {
         logicalMemory[i] = generate_random_byte();
     }
 
@@ -93,13 +95,13 @@ Process* create_process(int id, unsigned char *logicalMemory){
     return newProcess;
     }
 
-void createPageTable(Process* process, int numberOfPages, Node* headFreeFrames, MemoryFrame* physicalMemory){
+void createPageTable(Process* process, int numberOfPages, Node** headFreeFrames, MemoryFrame* physicalMemory){
     for (int i = 0; i < numberOfPages; i++){
-        Node* randomAvailableFrame = getRandomValue(&headFreeFrames);
+        Node* randomAvailableFrame = getRandomValue(headFreeFrames);
         printf("random node %d", randomAvailableFrame->data);
         process -> pageTable[i].pageAddress = i;
         process -> pageTable[i].frameAddress = randomAvailableFrame->data;
-        deleteNode(&headFreeFrames, randomAvailableFrame->data);
+        deleteNode(headFreeFrames, randomAvailableFrame->data);
         physicalMemory[randomAvailableFrame->data].set = 1;
         physicalMemory[randomAvailableFrame->data].value = process -> logicalMemory[i];
         printf("%d",physicalMemory[randomAvailableFrame->data].value);
@@ -141,6 +143,7 @@ int main() {
                 break;
             case 2:
                 printf("Opção selecionada: Visualizar Tabela de Páginas\n");
+                
                 // Percorre array de processos
                 // Listar id dos processos
                 // input processo
@@ -161,6 +164,11 @@ int main() {
                 } while (processSize > processMaxSize || processSize < 1);
 
                 int numberOfPages = processSize / pageSize;
+                
+                if (processSize % pageSize != 0) {
+                    numberOfPages++;
+                }
+
                 logicalMemory = create_logical_memory(numberOfPages);
                 int countHeadFreeFrames = 0;
                 for (int i = 0; numberOfFrames > i; i++) {
@@ -175,8 +183,8 @@ int main() {
                     for (int i = 0; i < numberOfPages; i++){
                         if(processes[i].id == -1){
                             processes[i] = *create_process(id, logicalMemory);
-                            createPageTable(&processes[i], numberOfPages, headFreeFrames, physicalMemory);
- 
+                            createPageTable(&processes[i], numberOfPages, &headFreeFrames, physicalMemory);
+                            break;
                         }
                     }
                 }

@@ -41,7 +41,8 @@ void deleteNode(Node** head, int key) {
 
     if (temp != NULL && temp->data == key) {
         *head = temp->next;
-        free(temp);
+        temp = NULL;
+        // free(temp);
         return;
     }
 
@@ -56,7 +57,7 @@ void deleteNode(Node** head, int key) {
     }
 
     prev->next = temp->next;
-    free(temp);
+    // free(temp);
 }
 
 Node* findNode(Node* head, int data) {
@@ -86,7 +87,7 @@ Node *getRandomValue(Node** head)
         for(Node* temp = *head; temp != NULL; temp = temp -> next)
         {
             int var = rand();
-            if(var % 3 == 0)
+            if(var % 3259 == 0)
             {
                 return temp;
             }
