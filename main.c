@@ -162,7 +162,6 @@ int main() {
                 break;
             case 2:
                 printf("Opção selecionada: Visualizar Tabela de Páginas\n");
-                // Verificar se faz sentido permitir a criação de processos com o mesmo ID
                 Process *process = processes[0];
                 if (process == NULL) {
                     printf("Nenhum processo registrado\n");
@@ -188,7 +187,7 @@ int main() {
                         printf("\n\nTabela de Páginas do Processo %d:\n", pid);
                         printf("|  Página  |\t|  Quadro  |\n");
                         for (int j = 0; j < process->numberOfPages; j++) {
-                            printf("*___________|\t|__________*\n");
+                            printf("*__________|\t|__________*\n");
                             printf("|    %02d    |\t|    %02d    |\n", process->pageTable[j].pageAddress, process->pageTable[j].frameAddress);
                         }
                         break;
