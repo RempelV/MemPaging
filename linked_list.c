@@ -59,6 +59,17 @@ void deleteNode(Node** head, int key) {
     free(temp);
 }
 
+Node* findNode(Node* head, int data) {
+    Node* current = head;
+    while (current != NULL) {
+        if (current->data == data) {
+            return current;
+        }
+        current = current->next;
+    }
+    return NULL;
+}
+
 void freeList(Node* head) {
     Node* temp;
     while (head != NULL) {

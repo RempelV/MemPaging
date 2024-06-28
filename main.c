@@ -4,9 +4,14 @@
 #include "linked_list.h"
 
 typedef struct {
+    int pageAddress;
+    int frameAddress;
+} RowPageTable;
+
+typedef struct {
     int id;
-    int size;
     unsigned char* logicalMemory;
+    RowPageTable* pageTable;
 } Process;
 
 typedef struct {
@@ -38,7 +43,7 @@ void print_physical_memory(MemoryFrame *physicalMemory, int numberOfFrames) {
             printf("%02d [ %d ]\n", i, physicalMemory[i].value);
         }
     }
-    printf("Free: %d - Used: %d\nMemória disponível: %f", free, used, ((float)free/numberOfFrames)*100);
+    printf("Free: %d - Used: %d\n\nMemória disponível: %.2f %%", free, used, ((float)free/numberOfFrames)*100);
 }
 
 MemoryFrame* initialize_physical_memory(int numberOfFrames){
@@ -80,10 +85,11 @@ unsigned char* create_logical_memory(int logicalMemorySize) {
     return logicalMemory;
 }
 
-Process* create_process(int id, int size){
+Process* create_process(int id, unsigned char *logicalMemory){
     Process* newProcess = (Process*)malloc(sizeof(Process));
     newProcess -> id = id;
-    newProcess -> size = size;
+    newProcess -> logicalMemory = logicalMemory;
+    newProcess -> pageTable = (RowPageTable*)malloc(sizeof(logicalMemory) * sizeof(RowPageTable));
     return newProcess;
     }
 
@@ -105,6 +111,10 @@ int main() {
 
     int numberOfFrames = physicalSize / pageSize;
     MemoryFrame *physicalMemory = initialize_physical_memory(numberOfFrames);
+    Process processes[numberOfFrames];
+    for(int i = 0; i < numberOfFrames; i++) {
+        processes[i] = *create_process(-1, 0);
+    }
 
     printf("Memória física possui: %d quadros", numberOfFrames); // debug
 
@@ -113,13 +123,11 @@ int main() {
         switch (menuOpt) {
             case 1:
                 printf("Opção selecionada: Visualizar Memória\n");
-                // Percorre memoria fisica e printa cada quadro (vazio ou valor dentro)
-                // Printa porcentagem entre livres/ocupados
                 print_physical_memory(physicalMemory, numberOfFrames);
                 break;
             case 2:
                 printf("Opção selecionada: Visualizar Tabela de Páginas\n");
-                // Percorre lista encadeada
+                // Percorre array de processos
                 // Listar id dos processos
                 // input processo
                 // Mostrar a tabela do processo
@@ -134,17 +142,22 @@ int main() {
                     printf("Digite um tamanho: ");
                     scanf("%d", &processSize);
                     if (processSize > processMaxSize || processSize < 1) {
-                        printf("O valor informado está fora dos limites de tamanho para um processo, por favor digite um novo valor ente 1 e %d", processMaxSize);
+                        printf("O valor informado está fora dos limites de tamanho para um processo, por favor digite um novo valor ente 1 e %d\n", processMaxSize);
                 }
                 } while (processSize > processMaxSize || processSize < 1);
 
-                int logicalMemorySize = processSize / pageSize;
-                logicalMemory = create_logical_memory(logicalMemorySize);
+                int numberOfPages = processSize / pageSize;
+                logicalMemory = create_logical_memory(numberOfPages);
 
-                for (int i = 0; i < logicalMemorySize; i++) {
+                for (int i = 0; i < numberOfPages; i++) {
                     printf(" %d\n", logicalMemory[i]);
                 }
-
+                for (int i = 0; i < numberOfPages; i++){
+                    if(processes[i].id == -1){
+                        processes[i] = *create_process(id, logicalMemory);
+                    }
+                }
+                
                 // verifica se eh maior que o tamanho maximo
                 // se sim mensagem de erro
                 // senao verifica se há disponibilidade no endereço logico
