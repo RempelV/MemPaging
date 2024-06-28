@@ -117,7 +117,6 @@ void createPageTable(Process* process, int numberOfPages, int pageSize, Node** h
         process->pageTable[i].pageAddress = i;
         process->pageTable[i].frameAddress = randomAvailableFrame->data;
         for (int j = 0; j < pageSize; j++){
-            printf("%d", process->logicalMemory[(i*pageSize)+j]);
             deleteNode(headFreeFrames, randomAvailableFrame->data);
             physicalMemory[randomAvailableFrame->data].set = 1;
             physicalMemory[randomAvailableFrame->data].values[j] = process->logicalMemory[(i*pageSize)+j];
@@ -202,9 +201,18 @@ int main() {
             case 3:
                 printf("Opção selecionada: Criar um Processo\n");
                 int id;
+                int flagID = 1;
                 int processSize;
-                printf("Digite um id: ");
-                scanf("%d", &id);
+                do{
+                    printf("Digite um id: ");
+                    scanf("%d", &id);
+                    for (int i = 0; i < numberOfFrames; i++){
+                        if(processes[i] != NULL && processes[i]->id == id){
+                            printf("ERRO: Este id já existe, digite outro id único!\n");
+                            break;
+                        } else flagID = 0;
+                    }
+                } while (flagID == 1);
                 do {
                     printf("Digite um tamanho: ");
                     scanf("%d", &processSize);
@@ -229,9 +237,6 @@ int main() {
                     for (int i = 0; i < numberOfFrames; i++) {
                         if (processes[i] == NULL) {
                             processes[i] = create_process(id, logicalMemory, numberOfPages);
-                            for(int j = 0; j < 64; j++){
-                                printf("%d", process[i].logicalMemory[j]);
-                            }
                             createPageTable(processes[i], numberOfPages, pageSize, &headFreeFrames, physicalMemory);
                             break;
                         }
