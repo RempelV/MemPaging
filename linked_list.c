@@ -42,7 +42,6 @@ void deleteNode(Node** head, int key) {
     if (temp != NULL && temp->data == key) {
         *head = temp->next;
         temp = NULL;
-        // free(temp);
         return;
     }
 
@@ -52,12 +51,10 @@ void deleteNode(Node** head, int key) {
     }
 
     if (temp == NULL) {
-        printf("Elemento não encontrado.\n");
         return;
     }
 
     prev->next = temp->next;
-    // free(temp);
 }
 
 Node* findNode(Node* head, int data) {

@@ -33,28 +33,29 @@ Entrada: ");
 
 void print_physical_memory(MemoryFrame *physicalMemory, int numberOfFrames, int pageSize) {
     int free = 0;
-    int used = 0;
     for (int i = 0; i < numberOfFrames; i++) {
+        printf("Frame %02d - ", i);
+        if (physicalMemory[i].set == 0) {
+            free++;
+        }
         for(int j = 0; j < pageSize; j ++){
             if (physicalMemory[i].set == 0) {
-                free++;
-                printf("%02d [   ]", i);
+                printf(" [   ] ");
             }
             else {
-                used++;
-                printf("%02d [ %d ] ", i, physicalMemory[i].values[j]);
+                printf(" [ %d ] ", physicalMemory[i].values[j]);
             }
         }
-        printf("\n");
+        printf("\n\n");
     }
-    printf("Free: %d - Used: %d\n\nMemória disponível: %.2f %%", free, used, ((float)free / numberOfFrames) * 100);
+    printf("Quadros livres: %d \n\nMemória disponível: %.2f %%", free, ((float)free / numberOfFrames) * 100);
 }
 
 MemoryFrame* initialize_physical_memory(int numberOfFrames, int pageSize) {
-    unsigned char *values = (unsigned char*)malloc(pageSize * sizeof(unsigned char));
-    MemoryFrame *physicalMemory = (MemoryFrame*)malloc(numberOfFrames * pageSize * sizeof(MemoryFrame));
-    physicalMemory -> values = values;
+    MemoryFrame *physicalMemory = (MemoryFrame*)malloc(numberOfFrames * sizeof(MemoryFrame));
     for (int i = 0; i < numberOfFrames; i++) {
+        unsigned char *values = (unsigned char*)malloc(pageSize * sizeof(unsigned char));
+        physicalMemory[i].values = values;
         for (int j = 0; j < pageSize; j++){
                     physicalMemory[i].values[j] = 0;
         }
@@ -84,10 +85,18 @@ void load_free_frames(Node **free_frames, int numberOfFrames) {
     }
 }
 
-unsigned char* create_logical_memory(int logicalMemorySize) {
+unsigned char* create_logical_memory(int logicalMemorySize, int pageSize) {
     unsigned char* logicalMemory = (unsigned char*)malloc(logicalMemorySize * sizeof(unsigned char));
+    printf("\npagesize %d\n", pageSize);
+    printf("pagesize %d\n", logicalMemorySize);
     for (int i = 0; i < logicalMemorySize; i++) {
         logicalMemory[i] = generate_random_byte();
+    }
+    for (int i = logicalMemorySize; i < pageSize; i++) {
+        logicalMemory[i] = 0;
+    }
+    for (int i = 0; i < pageSize; i++) {
+        printf("%d", logicalMemory[i]);
     }
     return logicalMemory;
 }
@@ -98,17 +107,21 @@ Process* create_process(int id, unsigned char *logicalMemory, int numberOfPages)
     newProcess->numberOfPages = numberOfPages;
     newProcess->logicalMemory = logicalMemory;
     newProcess->pageTable = (RowPageTable*)malloc(numberOfPages * sizeof(RowPageTable));
+
     return newProcess;
 }
 
-void createPageTable(Process* process, int numberOfPages, Node** headFreeFrames, MemoryFrame* physicalMemory) {
+void createPageTable(Process* process, int numberOfPages, int pageSize, Node** headFreeFrames, MemoryFrame* physicalMemory) {
     for (int i = 0; i < numberOfPages; i++) {
         Node* randomAvailableFrame = getRandomValue(headFreeFrames);
         process->pageTable[i].pageAddress = i;
         process->pageTable[i].frameAddress = randomAvailableFrame->data;
-        deleteNode(headFreeFrames, randomAvailableFrame->data);
-        physicalMemory[randomAvailableFrame->data].set = 1;
-        physicalMemory[randomAvailableFrame->data].values = process->logicalMemory[i];
+        for (int j = 0; j < pageSize; j++){
+            printf("%d", process->logicalMemory[(i*pageSize)+j]);
+            deleteNode(headFreeFrames, randomAvailableFrame->data);
+            physicalMemory[randomAvailableFrame->data].set = 1;
+            physicalMemory[randomAvailableFrame->data].values[j] = process->logicalMemory[(i*pageSize)+j];
+        }
     }
 }
 
@@ -130,7 +143,6 @@ int main() {
 
     int numberOfFrames = physicalSize / pageSize;
     MemoryFrame *physicalMemory = initialize_physical_memory(numberOfFrames, pageSize);
-    printf("AAAAAAAAAAA")
     Process *processes[numberOfFrames];
     load_free_frames(&headFreeFrames, numberOfFrames);
     for (int i = 0; i < numberOfFrames; i++) {
@@ -171,10 +183,11 @@ int main() {
                 for (int i = 1; process != NULL || found; i++) {
                     if (process->id == pid) {
                         found = 1;
-                        printf("Tabela de Páginas do Processo %d:\n", pid);
-                        printf("Página\tQuadro\n");
+                        printf("\n\nTabela de Páginas do Processo %d:\n", pid);
+                        printf("|  Página  |\t|  Quadro  |\n");
                         for (int j = 0; j < process->numberOfPages; j++) {
-                            printf("%d\t%d\n", process->pageTable[j].pageAddress, process->pageTable[j].frameAddress);
+                            printf("*___________|\t|__________*\n");
+                            printf("|    %02d    |\t|    %02d    |\n", process->pageTable[j].pageAddress, process->pageTable[j].frameAddress);
                         }
                         break;
                     }
@@ -205,7 +218,7 @@ int main() {
                     numberOfPages++;
                 }
 
-                logicalMemory = create_logical_memory(numberOfPages);
+                logicalMemory = create_logical_memory(processSize, pageSize);
                 int countHeadFreeFrames = 0;
                 for (int i = 0; i < numberOfFrames; i++) {
                     if (physicalMemory[i].set == 0) {
@@ -216,7 +229,10 @@ int main() {
                     for (int i = 0; i < numberOfFrames; i++) {
                         if (processes[i] == NULL) {
                             processes[i] = create_process(id, logicalMemory, numberOfPages);
-                            createPageTable(processes[i], numberOfPages, &headFreeFrames, physicalMemory);
+                            for(int j = 0; j < 64; j++){
+                                printf("%d", process[i].logicalMemory[j]);
+                            }
+                            createPageTable(processes[i], numberOfPages, pageSize, &headFreeFrames, physicalMemory);
                             break;
                         }
                     }
