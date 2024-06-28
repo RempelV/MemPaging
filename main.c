@@ -54,10 +54,9 @@ void print_physical_memory(MemoryFrame *physicalMemory, int numberOfFrames, int 
 MemoryFrame* initialize_physical_memory(int numberOfFrames, int pageSize) {
     MemoryFrame *physicalMemory = (MemoryFrame*)malloc(numberOfFrames * sizeof(MemoryFrame));
     for (int i = 0; i < numberOfFrames; i++) {
-        unsigned char *values = (unsigned char*)malloc(pageSize * sizeof(unsigned char));
-        physicalMemory[i].values = values;
+        physicalMemory[i].values = (unsigned char*)malloc(pageSize * sizeof(unsigned char));
         for (int j = 0; j < pageSize; j++){
-                    physicalMemory[i].values[j] = 0;
+            physicalMemory[i].values[j] = 0;
         }
         physicalMemory[i].set = 0;
     }
@@ -87,18 +86,21 @@ void load_free_frames(Node **free_frames, int numberOfFrames) {
 
 unsigned char* create_logical_memory(int logicalMemorySize, int pageSize) {
     unsigned char* logicalMemory = (unsigned char*)malloc(logicalMemorySize * sizeof(unsigned char));
-    printf("\npagesize %d\n", pageSize);
-    printf("pagesize %d\n", logicalMemorySize);
     for (int i = 0; i < logicalMemorySize; i++) {
         logicalMemory[i] = generate_random_byte();
     }
-    for (int i = logicalMemorySize; i < pageSize; i++) {
-        logicalMemory[i] = 0;
-    }
+
+    unsigned char* paddedLogicalMemory = (unsigned char*)malloc(pageSize * sizeof(unsigned char));
     for (int i = 0; i < pageSize; i++) {
-        printf("%d", logicalMemory[i]);
+        if (i < logicalMemorySize) {
+            paddedLogicalMemory[i] = logicalMemory[i];
+        } else {
+            paddedLogicalMemory[i] = 0;
+        }
     }
-    return logicalMemory;
+
+    free(logicalMemory);
+    return paddedLogicalMemory;
 }
 
 Process* create_process(int id, unsigned char *logicalMemory, int numberOfPages) {
@@ -107,18 +109,19 @@ Process* create_process(int id, unsigned char *logicalMemory, int numberOfPages)
     newProcess->numberOfPages = numberOfPages;
     newProcess->logicalMemory = logicalMemory;
     newProcess->pageTable = (RowPageTable*)malloc(numberOfPages * sizeof(RowPageTable));
-
     return newProcess;
 }
 
 void createPageTable(Process* process, int numberOfPages, int pageSize, Node** headFreeFrames, MemoryFrame* physicalMemory) {
     for (int i = 0; i < numberOfPages; i++) {
         Node* randomAvailableFrame = getRandomValue(headFreeFrames);
+
         process->pageTable[i].pageAddress = i;
         process->pageTable[i].frameAddress = randomAvailableFrame->data;
+        deleteNode(headFreeFrames, randomAvailableFrame->data);
+        physicalMemory[randomAvailableFrame->data].set = 1;
+
         for (int j = 0; j < pageSize; j++){
-            deleteNode(headFreeFrames, randomAvailableFrame->data);
-            physicalMemory[randomAvailableFrame->data].set = 1;
             physicalMemory[randomAvailableFrame->data].values[j] = process->logicalMemory[(i*pageSize)+j];
         }
     }
