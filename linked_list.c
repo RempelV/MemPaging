@@ -41,7 +41,7 @@ void deleteNode(Node** head, int key) {
 
     if (temp != NULL && temp->data == key) {
         *head = temp->next;
-        free(temp);
+        temp = NULL;
         return;
     }
 
@@ -51,12 +51,21 @@ void deleteNode(Node** head, int key) {
     }
 
     if (temp == NULL) {
-        printf("Elemento não encontrado.\n");
         return;
     }
 
     prev->next = temp->next;
-    free(temp);
+}
+
+Node* findNode(Node* head, int data) {
+    Node* current = head;
+    while (current != NULL) {
+        if (current->data == data) {
+            return current;
+        }
+        current = current->next;
+    }
+    return NULL;
 }
 
 void freeList(Node* head) {
@@ -66,4 +75,19 @@ void freeList(Node* head) {
         head = head->next;
         free(temp);
     }
+}
+
+Node *getRandomValue(Node** head)
+{
+    while (1)
+    {
+        for(Node* temp = *head; temp != NULL; temp = temp -> next)
+        {
+            int var = rand();
+            if(var % 3259 == 0)
+            {
+                return temp;
+            }
+        }
+    }    
 }
