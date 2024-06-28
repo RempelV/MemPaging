@@ -3,6 +3,17 @@
 #include <time.h>
 #include "linked_list.h"
 
+typedef struct {
+    int id;
+    int size;
+    unsigned char* logicalMemory;
+} Process;
+
+typedef struct {
+    unsigned char value;
+    int set; // 0 = não setado, 1 = setado
+} MemoryFrame;
+
 void main_menu(int *menuOptAddr){
     printf("\n\nMemory Paging\n\n\
 Selecione uma opção: \n\
@@ -12,6 +23,31 @@ Selecione uma opção: \n\
     Outro - Sair\n\n\
 Entrada: ");
     scanf(" %d", menuOptAddr);
+}
+
+void print_physical_memory(MemoryFrame *physicalMemory, int numberOfFrames) {
+    int free = 0;
+    int used = 0;
+    for (int i = 0; i < numberOfFrames; i++) {
+        if (physicalMemory[i].set == 0) {
+            free ++;
+            printf("%02d [   ]\n", i);
+        }
+        else {
+            used ++;
+            printf("%02d [ %d ]\n", i, physicalMemory[i].value);
+        }
+    }
+    printf("Free: %d - Used: %d\nMemória disponível: %f", free, used, ((float)free/numberOfFrames)*100);
+}
+
+MemoryFrame* initialize_physical_memory(int numberOfFrames){
+    MemoryFrame *physicalMemory = (MemoryFrame*)malloc(numberOfFrames * sizeof(MemoryFrame));
+    for (int i = 0; i < numberOfFrames; i++) {
+        physicalMemory[i].value = 0;
+        physicalMemory[i].set = 0;
+    }
+    return physicalMemory;
 }
 
 void get_params(int *physicalSizeAddr, int *pageSizeAddr, int *processMaxSizeAddr) {
@@ -35,12 +71,6 @@ void load_free_frames(Node **free_frames, int numberOfFrames) {
     }
 }
 
-void load_frames(unsigned char *physicalMemory) {
-    for (int i = 0; i < sizeof(physicalMemory); i++) {
-        physicalMemory[i] = generate_random_byte();
-    }
-}
-
 unsigned char* create_logical_memory(int logicalMemorySize) {
     unsigned char* logicalMemory = (unsigned char*)malloc(logicalMemorySize * sizeof(unsigned char));
     for (int i = 0; i < sizeof(logicalMemory); i++) {
@@ -49,6 +79,13 @@ unsigned char* create_logical_memory(int logicalMemorySize) {
 
     return logicalMemory;
 }
+
+Process* create_process(int id, int size){
+    Process* newProcess = (Process*)malloc(sizeof(Process));
+    newProcess -> id = id;
+    newProcess -> size = size;
+    return newProcess;
+    }
 
 int main() { 
     srand(time(NULL));
@@ -67,9 +104,9 @@ int main() {
     - Tamanho Máximo Processo: %d bytes\n\n", physicalSize, pageSize, processMaxSize);
 
     int numberOfFrames = physicalSize / pageSize;
-    unsigned char physicalMemory[numberOfFrames];
-    load_frames(physicalMemory);
-    load_free_frames(&freeFrames, numberOfFrames);
+    MemoryFrame *physicalMemory = initialize_physical_memory(numberOfFrames);
+
+    printf("Memória física possui: %d quadros", numberOfFrames); // debug
 
     while (running) {
         main_menu(&menuOpt);
@@ -78,9 +115,7 @@ int main() {
                 printf("Opção selecionada: Visualizar Memória\n");
                 // Percorre memoria fisica e printa cada quadro (vazio ou valor dentro)
                 // Printa porcentagem entre livres/ocupados
-                for (int i = 0; i < sizeof(physicalMemory); i++) {
-                    printf(" %d", physicalMemory[i]);
-                }
+                print_physical_memory(physicalMemory, numberOfFrames);
                 break;
             case 2:
                 printf("Opção selecionada: Visualizar Tabela de Páginas\n");
@@ -92,13 +127,18 @@ int main() {
             case 3:
                 printf("Opção selecionada: Criar um Processo\n");
                 int id;
-                int tamanho;
+                int processSize;
                 printf("Digite um id: ");
                 scanf("%d", &id);
-                printf("Digite um tamanho: ");
-                scanf("%d", &tamanho);
+                do {
+                    printf("Digite um tamanho: ");
+                    scanf("%d", &processSize);
+                    if (processSize > processMaxSize || processSize < 1) {
+                        printf("O valor informado está fora dos limites de tamanho para um processo, por favor digite um novo valor ente 1 e %d", processMaxSize);
+                }
+                } while (processSize > processMaxSize || processSize < 1);
 
-                int logicalMemorySize = tamanho / pageSize;
+                int logicalMemorySize = processSize / pageSize;
                 logicalMemory = create_logical_memory(logicalMemorySize);
 
                 for (int i = 0; i < logicalMemorySize; i++) {
